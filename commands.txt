@@ -1,0 +1,37 @@
+# Login azure
+az login
+
+# Create resource group
+az group create --name myAKSCluster_group --location eastus
+
+# Create acr 
+az acr create --resource-group myAKSCluster_group --name aksflaskapp --sku Basic --location eastus
+
+# create aks and attach acr
+az aks create --resource-group myAKSCluster_group --name akskubes --node-count 1 --enable-addons monitoring --generate-ssh-keys --attach-acr aksflaskapp
+
+# create docker image
+docker build -t mlops_aks .
+
+# tag docker image
+docker tag mlops_aks aksflaskapp.azurecr.io/mlops_aks:latest
+
+# Push image
+az acr login --name aksflaskapp
+docker push aksflaskapp.azurecr.io/mlops_aks:latest
+
+# Connect aks
+az account set --subscription b69cb376-c1df-412e-b6c5-9097ff1ef717
+az aks get-credentials --resource-group myAKSCluster_group --name akskubes --overwrite-existing
+
+# deploy
+kubectl apply -f your-deployment-file.yaml
+
+# check
+kubectl get pods
+kubectl get svc
+
+# once you ahve external IP from kubectl
+http://<external-ip-address>:<port>
+
+-- model accessed -- 
